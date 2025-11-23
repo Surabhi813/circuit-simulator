@@ -409,88 +409,35 @@
                 });
             }
         }
-        
         // --- Simulation Logic (Client Side) ---
         async function runSimulation() {
             const runButton = document.getElementById('run-simulation');
             runButton.disabled = true;
             runButton.textContent = 'Simulating...';
 
-            const circuitData = {
-                components,
-                wires,
-                groundNodeId
-            };
-
-            const backendUrl = 'http://127.0.0.1:5000/simulate';
-
             try {
-                const response = await fetch(backendUrl, {
+                
+                const circuitData = { components, wires, groundNodeId, };
+
+                // 2️⃣ Choose backend route
+                backendUrl = 'http://127.0.0.1:5000/simulate';
+
+
+                // 3️⃣ Send request
+                await fetch(backendUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(circuitData),
                 });
 
-                const result = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(result.error || 'An unknown error occurred.');
-                }
                 
-                if(result.status === 'success') {
-                    showResults(result.voltages);
-                } else {
-                    showSimulationError(result.error);
-                }
-
             } catch (error) {
-                console.error('Simulation request failed:', error);
-                let errorMessage = 'Could not connect to the Python backend. Is it running?';
-                if (error.message && !error.message.includes('Failed to fetch')) {
-                    errorMessage = error.message;
-                }
-                showSimulationError(errorMessage);
+                console.error('Simulation failed:', error);
+                alert('Simulation failed. Check backend connection or console for details.');
             } finally {
                 runButton.disabled = false;
                 runButton.textContent = 'Run Simulation';
             }
-        }
-        
-        // --- UI Feedback ---
-        function showResultsModal() {
-            document.getElementById('results-modal').classList.remove('hidden');
-        }
-
-        function hideResultsModal() {
-            document.getElementById('results-modal').classList.add('hidden');
-        }
-
-        function showResults(voltages) {
-            let html = '<table><thead><tr><th>Node</th><th>Voltage</th></tr></thead><tbody>';
-            
-            const sortedNodes = Object.keys(voltages).map(Number).sort((a,b) => a-b);
-
-            for(const nodeIndex of sortedNodes) {
-                 const voltage = voltages[nodeIndex];
-                 const isGround = voltage === 0.0;
-                 html += `<tr>
-                    <td>Node ${nodeIndex} ${isGround ? '(GND)' : ''}</td>
-                    <td class="font-mono">${voltage.toFixed(4)} V</td>
-                 </tr>`;
-            };
-
-            html += '</tbody></table>';
-            document.getElementById('results-content').innerHTML = html;
-            showResultsModal();
-        }
-
-        function showSimulationError(message) {
-             const html = `<div class="error-box">
-                <h3>Simulation Error</h3>
-                <p>${message}</p>
-             </div>`;
-             document.getElementById('results-content').innerHTML = html;
-             showResultsModal();
         }
 
         // --- Start the application ---
